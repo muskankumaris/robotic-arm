@@ -1,0 +1,277 @@
+                                  Robotic Arm (2nd Semester)
+#include <ESP32Servo.h>
+
+// =====================================
+// SERVOS
+// =====================================
+
+Servo baseServo;
+Servo shoulderServo;
+Servo elbowServo;
+Servo wristServo;
+Servo gripperServo;
+
+// =====================================
+// SERVO PINS
+// =====================================
+
+#define BASE_PIN       13
+#define SHOULDER_PIN   12
+#define ELBOW_PIN      14
+#define WRIST_PIN      27
+#define GRIPPER_PIN    18
+
+// =====================================
+// JOYSTICK PINS
+// =====================================
+
+// JOYSTICK 1
+#define JOY1_X   34
+#define JOY1_Y   35
+#define JOY1_SW  25
+
+// JOYSTICK 2
+#define JOY2_X   32
+#define JOY2_Y   33
+#define JOY2_SW  26
+
+// =====================================
+// ANGLES
+// =====================================
+
+int baseAngle = 90;
+int shoulderAngle = 90;
+
+int elbowAngle = 90;
+int wristAngle = 90;
+
+// =====================================
+// GRIPPER LOGIC
+// =====================================
+
+// YOUR GRIPPER:
+// 60  = CLOSED
+// 150 = OPEN
+
+int gripperAngle = 150;
+
+bool gripperOpen = true;
+
+// =====================================
+// BUTTON STATES
+// =====================================
+
+bool lastJoy1Button = HIGH;
+bool lastJoy2Button = HIGH;
+
+// =====================================
+// THRESHOLDS
+// =====================================
+
+int lowThreshold  = 1000;
+int highThreshold = 3000;
+
+// =====================================
+// SETUP
+// =====================================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  // Attach servos
+  baseServo.attach(BASE_PIN);
+  shoulderServo.attach(SHOULDER_PIN);
+
+  elbowServo.attach(ELBOW_PIN);
+  wristServo.attach(WRIST_PIN);
+
+  gripperServo.attach(GRIPPER_PIN);
+
+  // Buttons
+  pinMode(JOY1_SW, INPUT_PULLUP);
+  pinMode(JOY2_SW, INPUT_PULLUP);
+
+  // Initial positions
+  baseServo.write(baseAngle);
+  shoulderServo.write(shoulderAngle);
+
+  elbowServo.write(elbowAngle);
+  wristServo.write(wristAngle);
+
+  // START OPEN
+  gripperServo.write(gripperAngle);
+
+  delay(1000);
+}
+
+// =====================================
+// LOOP
+// =====================================
+
+void loop() {
+
+  // =====================================
+  // READ JOYSTICKS
+  // =====================================
+
+  int joy1X = analogRead(JOY1_X);
+  int joy1Y = analogRead(JOY1_Y);
+
+  int joy2X = analogRead(JOY2_X);
+  int joy2Y = analogRead(JOY2_Y);
+
+  bool joy1Button = digitalRead(JOY1_SW);
+  bool joy2Button = digitalRead(JOY2_SW);
+
+  // =====================================
+  // JOYSTICK 1
+  // BASE + SHOULDER ONLY
+  // =====================================
+
+  // SHOULDER UP
+  if (joy1X < lowThreshold && joy1Y < lowThreshold) {
+
+    shoulderAngle++;
+  }
+
+  // SHOULDER DOWN
+  else if (joy1X > highThreshold && joy1Y > highThreshold) {
+
+    shoulderAngle--;
+  }
+
+  // BASE RIGHT
+  else if (joy1X < lowThreshold && joy1Y > highThreshold) {
+
+    baseAngle++;
+  }
+
+  // BASE LEFT
+  else if (joy1X > highThreshold && joy1Y < lowThreshold) {
+
+    baseAngle--;
+  }
+
+  // =====================================
+  // JOYSTICK 2
+  // ELBOW + WRIST ONLY
+  // =====================================
+
+  // ELBOW FORWARD
+  if (joy2X < lowThreshold && joy2Y < lowThreshold) {
+
+    elbowAngle++;
+  }
+
+  // ELBOW BACKWARD
+  else if (joy2X > highThreshold && joy2Y < lowThreshold) {
+
+    elbowAngle--;
+  }
+
+  // WRIST UP
+  else if (joy2X > highThreshold && joy2Y > highThreshold) {
+
+    wristAngle++;
+  }
+
+  // WRIST DOWN
+  else if (joy2X < lowThreshold && joy2Y > highThreshold) {
+
+    wristAngle--;
+  }
+
+  // =====================================
+  // JOYSTICK 1 BUTTON
+  // HOME POSITION
+  // =====================================
+
+  if (joy1Button == LOW && lastJoy1Button == HIGH) {
+
+    baseAngle = 90;
+    shoulderAngle = 90;
+
+    elbowAngle = 90;
+    wristAngle = 90;
+
+    Serial.println("HOME POSITION");
+
+    delay(300);
+  }
+
+  lastJoy1Button = joy1Button;
+
+  // =====================================
+  // JOYSTICK 2 BUTTON
+  // GRIPPER TOGGLE
+  // =====================================
+
+  if (joy2Button == LOW && lastJoy2Button == HIGH) {
+
+    gripperOpen = !gripperOpen;
+
+    // OPEN
+    if (gripperOpen) {
+
+      gripperAngle = 150;
+
+      Serial.println("Gripper Open");
+    }
+
+    // CLOSE
+    else {
+
+      gripperAngle = 60;
+
+      Serial.println("Gripper Closed");
+    }
+
+    gripperServo.write(gripperAngle);
+
+    delay(300);
+  }
+
+  lastJoy2Button = joy2Button;
+
+  // =====================================
+  // LIMITS
+  // =====================================
+
+  baseAngle = constrain(baseAngle, 0, 180);
+  shoulderAngle = constrain(shoulderAngle, 0, 180);
+
+  elbowAngle = constrain(elbowAngle, 0, 180);
+  wristAngle = constrain(wristAngle, 0, 180);
+
+  // =====================================
+  // WRITE SERVOS
+  // =====================================
+
+  baseServo.write(baseAngle);
+  shoulderServo.write(shoulderAngle);
+
+  elbowServo.write(elbowAngle);
+  wristServo.write(wristAngle);
+
+  // =====================================
+  // DEBUG
+  // =====================================
+
+  Serial.print("Base:");
+  Serial.print(baseAngle);
+
+  Serial.print(" Shoulder:");
+  Serial.print(shoulderAngle);
+
+  Serial.print(" Elbow:");
+  Serial.print(elbowAngle);
+
+  Serial.print(" Wrist:");
+  Serial.print(wristAngle);
+
+  Serial.print(" Gripper:");
+  Serial.println(gripperAngle);
+
+  delay(20);
+}
