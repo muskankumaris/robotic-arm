@@ -1,5 +1,5 @@
 # 🤖 Robotic Arm
-An ESP32 based 4-DOF robotic arm with an adaptive gripper for pick and place operations.
+An ESP32-based 4-DOF robotic arm with an adaptive gripper for pick-and-place operations.
 
 ## Features
 - ESP32 Controller
@@ -12,4 +12,4 @@ An ESP32 based 4-DOF robotic arm with an adaptive gripper for pick and place ope
 - ESP32
 - Arduino IDE
 - Servo Motors
-- 3D Printed Parts
+- PLA (3D Printing)
